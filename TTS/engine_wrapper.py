@@ -15,9 +15,7 @@ from utils.console import print_step, print_substep
 from utils.voice import sanitize_text
 
 
-DEFAULT_MAX_LENGTH: int = (
-    50  # Video length variable, edit this on your own risk. It should work, but it's not supported
-)
+DEFAULT_MAX_LENGTH: int = 50  # Video length variable, edit this on your own risk. It should work, but it's not supported
 
 
 class TTSEngine:
@@ -60,17 +58,22 @@ class TTSEngine:
             comment["comment_body"] = re.sub(regex_urls, " ", comment["comment_body"])
             comment["comment_body"] = comment["comment_body"].replace("\n", ". ")
             comment["comment_body"] = re.sub(r"\bAI\b", "A.I", comment["comment_body"])
-            comment["comment_body"] = re.sub(r"\bAGI\b", "A.G.I", comment["comment_body"])
+            comment["comment_body"] = re.sub(
+                r"\bAGI\b", "A.G.I", comment["comment_body"]
+            )
             if comment["comment_body"][-1] != ".":
                 comment["comment_body"] += "."
             comment["comment_body"] = comment["comment_body"].replace(". . .", ".")
             comment["comment_body"] = comment["comment_body"].replace(".. . ", ".")
             comment["comment_body"] = comment["comment_body"].replace(". . ", ".")
             comment["comment_body"] = re.sub(r'\."\.', '".', comment["comment_body"])
+            print_substep(f"Comment body: {comment['comment_body']}")
+        print_substep("Done adding periods to comments...", style="bold green")
 
     def run(self) -> Tuple[int, int]:
         Path(self.path).mkdir(parents=True, exist_ok=True)
         print_step("Saving Text to MP3 files...")
+        print_step(f"tts_module: {self.tts_module}")
 
         self.add_periods()
         self.call_tts("title", process_text(self.reddit_object["thread_title"]))
@@ -82,14 +85,19 @@ class TTSEngine:
                 if len(self.reddit_object["thread_post"]) > self.tts_module.max_chars:
                     self.split_post(self.reddit_object["thread_post"], "postaudio")
                 else:
-                    self.call_tts("postaudio", process_text(self.reddit_object["thread_post"]))
+                    self.call_tts(
+                        "postaudio", process_text(self.reddit_object["thread_post"])
+                    )
             elif settings.config["settings"]["storymodemethod"] == 1:
                 for idx, text in track(enumerate(self.reddit_object["thread_post"])):
                     self.call_tts(f"postaudio-{idx}", process_text(text))
 
         else:
-            for idx, comment in track(enumerate(self.reddit_object["comments"]), "Saving..."):
+            for idx, comment in track(
+                enumerate(self.reddit_object["comments"]), "Saving..."
+            ):
                 # ! Stop creating mp3 files if the length is greater than max length.
+                print_substep(f"Saving comment: {idx} {comment}")
                 if self.length > self.max_length and idx > 1:
                     self.length -= self.last_clip_length
                     idx -= 1
@@ -146,6 +154,7 @@ class TTSEngine:
             print("OSError")
 
     def call_tts(self, filename: str, text: str):
+        print_substep("Calling TTS...")
         self.tts_module.run(
             text,
             filepath=f"{self.path}/{filename}.mp3",
@@ -156,6 +165,7 @@ class TTSEngine:
         # except (MutagenError, HeaderNotFoundError):
         #     self.length += sox.file_info.duration(f"{self.path}/{filename}.mp3")
         try:
+            print_substep("Creating audio file clip?")
             clip = AudioFileClip(f"{self.path}/{filename}.mp3")
             self.last_clip_length = clip.duration
             self.length += clip.duration
@@ -171,7 +181,9 @@ class TTSEngine:
             fps=44100,
         )
         silence = volumex(silence, 0)
-        silence.write_audiofile(f"{self.path}/silence.mp3", fps=44100, verbose=False, logger=None)
+        silence.write_audiofile(
+            f"{self.path}/silence.mp3", fps=44100, verbose=False, logger=None
+        )
 
 
 def process_text(text: str, clean: bool = True):
@@ -179,6 +191,8 @@ def process_text(text: str, clean: bool = True):
     new_text = sanitize_text(text) if clean else text
     if lang:
         print_substep("Translating Text...")
-        translated_text = translators.translate_text(text, translator="google", to_language=lang)
+        translated_text = translators.translate_text(
+            text, translator="google", to_language=lang
+        )
         new_text = sanitize_text(translated_text)
     return new_text
