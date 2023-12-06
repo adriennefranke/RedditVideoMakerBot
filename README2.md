@@ -39,3 +39,16 @@
 	- Follow these instructions to get TikTok Session ID: https://github.com/elebumm/RedditVideoMakerBot/pull/1252
 	- https://github.com/Steve0929/tiktok-tts
 	- Replace `TikTok.py` with this code: https://github.com/elebumm/RedditVideoMakerBot/issues/1858#issuecomment-1808631802
+- 
+
+## Instructions to Run
+1. Open terminal
+2. Type `cd dev/RedditVideoMakerBot`
+3. Type `source venv/bin/activate`
+4. Type `python main.py`
+
+To open the code and change your configuration:
+1. Make sure you are in `RedditVideoMakerBot`
+2. Type `code .` This opens the code in VS Code
+3. Open the file `config.toml` and make your changes and save your file
+4. Re-run the program (`python main.py`)
